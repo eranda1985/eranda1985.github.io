@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Team Task Worksheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b27;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --text: #e8eaf2;
+    --muted: #7a85a0;
+    --accent: #f0a500;
+    --accent-dim: rgba(240,165,0,0.12);
+    --status-todo: #3b82f6;
+    --status-todo-bg: rgba(59,130,246,0.12);
+    --status-inprog: #f59e0b;
+    --status-inprog-bg: rgba(245,158,11,0.12);
+    --status-done: #22c55e;
+    --status-done-bg: rgba(34,197,94,0.12);
+    --danger: #ef4444;
+    --danger-dim: rgba(239,68,68,0.12);
+    --radius: 10px;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 40px; padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 16px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 4px; }
+  .header-label {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.15em;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .header-title {
+    font-family: var(--font-head);
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 800; line-height: 1; color: var(--text);
+  }
+  .header-stats { display: flex; gap: 20px; }
+  .stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .stat-number { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ── CONTROLS BAR ── */
+  .controls {
+    display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  input[type="text"], select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .search-input {
+    width: 100%; padding: 10px 12px 10px 38px;
+  }
+  select { padding: 10px 12px; cursor: pointer; }
+  select option { background: var(--surface2); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border: none; border-radius: var(--radius);
+    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.18s; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent); color: #0e1117;
+  }
+  .btn-primary:hover { background: #ffc107; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(240,165,0,0.3); }
+  .btn-ghost {
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid transparent; }
+  .btn-danger:hover { background: var(--danger); color: white; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+  /* ── TASK TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 2px solid var(--border); }
+  th {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 12px 16px; text-align: left; font-weight: 500;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--surface); }
+  td { padding: 14px 16px; font-size: 13px; vertical-align: middle; }
+  .col-id { color: var(--muted); font-size: 11px; width: 80px; }
+  .col-name { font-weight: 500; font-family: var(--font-head); font-size: 15px; }
+  .col-task { color: #c5cfe0; max-width: 340px; }
+  .col-status { width: 140px; }
+  .col-date { color: var(--muted); font-size: 11px; width: 120px; }
+  .col-actions { width: 120px; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; letter-spacing: 0.06em; font-weight: 500;
+  }
+  .status-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+  .status-todo    { color: var(--status-todo);   background: var(--status-todo-bg); }
+  .status-inprog  { color: var(--status-inprog); background: var(--status-inprog-bg); }
+  .status-done    { color: var(--status-done);   background: var(--status-done-bg); }
+
+  .actions { display: flex; gap: 6px; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 80px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty h3 { font-family: var(--font-head); font-size: 20px; color: var(--text); margin-bottom: 6px; }
+  .empty p { font-size: 13px; }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 60px; color: var(--muted); font-size: 13px; }
+  .spinner {
+    width: 32px; height: 32px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MODAL ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,12,18,0.8);
+    backdrop-filter: blur(4px); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; width: 100%; max-width: 480px;
+    padding: 32px; transform: translateY(20px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .overlay.open .modal { transform: translateY(0); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .modal-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; }
+  .modal-close {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    padding: 4px; border-radius: 6px; line-height: 1;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .form-group { margin-bottom: 20px; }
+  label { display: block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 11px 14px;
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; }
+
+  /* ── TOAST ── */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 18px;
+    font-size: 13px; display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 280px;
+  }
+  .toast.success { border-left: 3px solid var(--status-done); }
+  .toast.error   { border-left: 3px solid var(--danger); }
+  @keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+
+  /* ── CONFIRM ── */
+  .confirm-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; max-width: 360px; width: 100%;
+    text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    transform: translateY(20px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .overlay.open .confirm-box { transform: translateY(0); }
+  .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+  .confirm-msg { font-family: var(--font-head); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+  .confirm-sub { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+  .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* ── WEBHOOK CONFIG ── */
+  .config-banner {
+    background: var(--accent-dim); border: 1px solid rgba(240,165,0,0.25);
+    border-radius: var(--radius); padding: 14px 18px;
+    margin-bottom: 28px; display: flex; align-items: center; gap: 12px;
+    font-size: 12px; color: var(--accent);
+  }
+  .config-banner a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- CONFIG BANNER -->
+  <div class="config-banner" id="configBanner">
+    ⚙️ &nbsp;<span>Webhook URLs not configured. <a onclick="openConfig()">Click here to set them up</a> — takes 30 seconds.</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <span class="header-label">// workspace</span>
+      <h1 class="header-title">Task Sheet</h1>
+    </div>
+    <div class="header-stats">
+      <div class="stat"><span class="stat-number" id="statTotal">0</span><span class="stat-label">Total</span></div>
+      <div class="stat"><span class="stat-number" id="statDone">0</span><span class="stat-label">Done</span></div>
+      <div class="stat"><span class="stat-number" id="statOpen">0</span><span class="stat-label">Open</span></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="Filter by name or task..." oninput="renderTable()"/>
+    </div>
+    <select id="filterStatus" onchange="renderTable()">
+      <option value="">All Statuses</option>
+      <option value="Not Started">Not Started</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Done">Done</option>
+    </select>
+    <button class="btn btn-ghost" onclick="loadTasks()">↻ Refresh</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add Task</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table id="taskTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Task</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="taskBody"></tbody>
+    </table>
+    <div id="taskLoading" class="loading"><div class="spinner"></div>Loading tasks...</div>
+    <div id="taskEmpty" class="empty" style="display:none">
+      <div class="empty-icon">📋</div>
+      <h3>No tasks found</h3>
+      <p>Add a new task or adjust your search.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay" id="formOverlay" onclick="overlayClick(event,'formOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Add Task</h2>
+      <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="inputName" placeholder="e.g. Alice" />
+    </div>
+    <div class="form-group">
+      <label>Task Description</label>
+      <textarea id="inputTask" placeholder="Describe the task..."></textarea>
+    </div>
+    <div class="form-group" id="statusGroup">
+      <label>Status</label>
+      <select id="inputStatus">
+        <option value="Not Started">Not Started</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Done">Done</option>
+      </select>
+    </div>
+    <input type="hidden" id="inputId" />
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('formOverlay')">Cancel</button>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="overlay" id="confirmOverlay" onclick="overlayClick(event,'confirmOverlay')">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-msg">Delete this task?</div>
+    <div class="confirm-sub">This will remove it from the sheet. This can't be undone.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeModal('confirmOverlay')">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- WEBHOOK CONFIG MODAL -->
+<div class="overlay" id="configOverlay" onclick="overlayClick(event,'configOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">⚙️ Configure Webhooks</h2>
+      <button class="modal-close" onclick="closeModal('configOverlay')">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+      Paste your Make.com webhook URLs below. These are saved in your browser.
+    </p>
+    <div class="form-group">
+      <label>GET Tasks Webhook URL</label>
+      <input type="text" id="cfgGet" placeholder="https://hook.eu2.make.com/..." />
+    </div>
+    <div class="form-group">
+      <label>ADD Task Webhook URL</label>
+      <input type="text" id="cfgAdd" placeholder="https://hook.eu2.make.com/..." />
+    </div>
+    <div class="form-group">
+      <label>EDIT Task Webhook URL</label>
+      <input type="text" id="cfgEdit" placeholder="https://hook.eu2.make.com/..." />
+    </div>
+    <div class="form-group">
+      <label>DELETE Task Webhook URL</label>
+      <input type="text" id="cfgDelete" placeholder="https://hook.eu2.make.com/..." />
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('configOverlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveConfig()">Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ───────────────────────────────────────────────
+// CONFIG
+// ───────────────────────────────────────────────
+let WEBHOOKS = {
+  get:    '',
+  add:    '',
+  edit:   '',
+  delete: ''
+};
+
+function loadConfig() {
+  const saved = localStorage.getItem('ts_webhooks');
+  if (saved) { WEBHOOKS = JSON.parse(saved); checkConfigBanner(); }
+}
+
+function checkConfigBanner() {
+  const allSet = Object.values(WEBHOOKS).every(v => v.trim());
+  document.getElementById('configBanner').style.display = allSet ? 'none' : 'flex';
+}
+
+function saveConfig() {
+  WEBHOOKS.get    = document.getElementById('cfgGet').value.trim();
+  WEBHOOKS.add    = document.getElementById('cfgAdd').value.trim();
+  WEBHOOKS.edit   = document.getElementById('cfgEdit').value.trim();
+  WEBHOOKS.delete = document.getElementById('cfgDelete').value.trim();
+  localStorage.setItem('ts_webhooks', JSON.stringify(WEBHOOKS));
+  closeModal('configOverlay');
+  checkConfigBanner();
+  toast('Webhooks saved!', 'success');
+  loadTasks();
+}
+
+function openConfig() {
+  document.getElementById('cfgGet').value    = WEBHOOKS.get;
+  document.getElementById('cfgAdd').value    = WEBHOOKS.add;
+  document.getElementById('cfgEdit').value   = WEBHOOKS.edit;
+  document.getElementById('cfgDelete').value = WEBHOOKS.delete;
+  openModal('configOverlay');
+}
+
+// ───────────────────────────────────────────────
+// STATE
+// ───────────────────────────────────────────────
+let tasks = [];
+let deleteTargetId = null;
+let isEditing = false;
+
+// ───────────────────────────────────────────────
+// API CALLS
+// ───────────────────────────────────────────────
+async function loadTasks() {
+  if (!WEBHOOKS.get) { showEmpty(); return; }
+  showLoading();
+  try {
+    const res = await fetch(WEBHOOKS.get);
+    const data = await res.json();
+    tasks = Array.isArray(data) ? data : (data.tasks || data.rows || []);
+    renderTable();
+    updateStats();
+  } catch(e) {
+    toast('Failed to load tasks. Check your GET webhook.', 'error');
+    showEmpty();
+  }
+}
+
+async function submitTask() {
+  const name   = document.getElementById('inputName').value.trim();
+  const task   = document.getElementById('inputTask').value.trim();
+  const status = document.getElementById('inputStatus').value;
+  const id     = document.getElementById('inputId').value;
+  if (!name || !task) { toast('Name and task are required.', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = isEditing ? 'Saving...' : 'Adding...';
+  btn.disabled = true;
+
+  try {
+    const url  = isEditing ? WEBHOOKS.edit : WEBHOOKS.add;
+    const body = isEditing ? { id, name, task, status } : { name, task, status };
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    closeModal('formOverlay');
+    toast(isEditing ? 'Task updated!' : 'Task added!', 'success');
+    await loadTasks();
+  } catch(e) {
+    toast('Something went wrong. Check your webhook URL.', 'error');
+  } finally {
+    btn.textContent = isEditing ? 'Save Changes' : 'Add Task';
+    btn.disabled = false;
+  }
+}
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  document.getElementById('confirmDeleteBtn').textContent = 'Deleting...';
+  try {
+    await fetch(WEBHOOKS.delete, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: deleteTargetId })
+    });
+    closeModal('confirmOverlay');
+    toast('Task deleted.', 'success');
+    await loadTasks();
+  } catch(e) {
+    toast('Delete failed. Check your webhook.', 'error');
+  } finally {
+    document.getElementById('confirmDeleteBtn').textContent = 'Delete';
+    deleteTargetId = null;
+  }
+}
+
+// ───────────────────────────────────────────────
+// RENDER
+// ───────────────────────────────────────────────
+function renderTable() {
+  const q      = document.getElementById('searchInput').value.toLowerCase();
+  const fstatus = document.getElementById('filterStatus').value;
+
+  const filtered = tasks.filter(t => {
+    const nameMatch = (t.name||'').toLowerCase().includes(q);
+    const taskMatch = (t.task||'').toLowerCase().includes(q);
+    const statusMatch = !fstatus || t.status === fstatus;
+    return (nameMatch || taskMatch) && statusMatch;
+  });
+
+  const tbody = document.getElementById('taskBody');
+  document.getElementById('taskLoading').style.display = 'none';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    document.getElementById('taskEmpty').style.display = 'block';
+    document.getElementById('taskTable').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('taskEmpty').style.display = 'none';
+  document.getElementById('taskTable').style.display = 'table';
+
+  tbody.innerHTML = filtered.map(t => {
+    const badge = statusBadge(t.status || 'Not Started');
+    const date  = t.updated_at ? formatDate(t.updated_at) : (t.created_at ? formatDate(t.created_at) : '—');
+    return `
+    <tr>
+      <td class="col-id">#${String(t.id||'').slice(-4).padStart(4,'0')}</td>
+      <td class="col-name">${esc(t.name||'')}</td>
+      <td class="col-task">${esc(t.task||'')}</td>
+      <td class="col-status">${badge}</td>
+      <td class="col-date">${date}</td>
+      <td class="col-actions">
+        <div class="actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="openDeleteConfirm('${t.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function statusBadge(s) {
+  const map = {
+    'Not Started': ['status-todo','Not Started'],
+    'In Progress': ['status-inprog','In Progress'],
+    'Done':        ['status-done','Done']
+  };
+  const [cls, label] = map[s] || ['status-todo','Not Started'];
+  return `<span class="status-badge ${cls}">${label}</span>`;
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = tasks.length;
+  document.getElementById('statDone').textContent  = tasks.filter(t=>t.status==='Done').length;
+  document.getElementById('statOpen').textContent  = tasks.filter(t=>t.status!=='Done').length;
+}
+
+function showLoading() {
+  document.getElementById('taskBody').innerHTML = '';
+  document.getElementById('taskLoading').style.display = 'block';
+  document.getElementById('taskEmpty').style.display   = 'none';
+  document.getElementById('taskTable').style.display   = 'none';
+}
+
+function showEmpty() {
+  document.getElementById('taskLoading').style.display = 'none';
+  document.getElementById('taskEmpty').style.display   = 'block';
+  document.getElementById('taskTable').style.display   = 'none';
+}
+
+// ───────────────────────────────────────────────
+// MODALS
+// ───────────────────────────────────────────────
+function openAddModal() {
+  isEditing = false;
+  document.getElementById('modalTitle').textContent  = 'Add Task';
+  document.getElementById('submitBtn').textContent   = 'Add Task';
+  document.getElementById('inputName').value  = '';
+  document.getElementById('inputTask').value  = '';
+  document.getElementById('inputStatus').value = 'Not Started';
+  document.getElementById('inputId').value    = '';
+  openModal('formOverlay');
+}
+
+function openEditModal(t) {
+  isEditing = true;
+  document.getElementById('modalTitle').textContent  = 'Edit Task';
+  document.getElementById('submitBtn').textContent   = 'Save Changes';
+  document.getElementById('inputName').value   = t.name  || '';
+  document.getElementById('inputTask').value   = t.task  || '';
+  document.getElementById('inputStatus').value = t.status || 'Not Started';
+  document.getElementById('inputId').value     = t.id    || '';
+  openModal('formOverlay');
+}
+
+function openDeleteConfirm(id) {
+  deleteTargetId = id;
+  openModal('confirmOverlay');
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function overlayClick(e, id) { if (e.target.id === id) closeModal(id); }
+
+// ───────────────────────────────────────────────
+// TOAST
+// ───────────────────────────────────────────────
+function toast(msg, type='success') {
+  const wrap = document.getElementById('toastWrap');
+  const el   = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = (type==='success' ? '✓' : '✗') + ` &nbsp;${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ───────────────────────────────────────────────
+// UTILS
+// ───────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatDate(s) {
+  try { return new Date(s).toLocaleDateString('en-AU',{day:'2-digit',month:'short'}); } catch{ return s; }
+}
+
+// ───────────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────────
+loadConfig();
+loadTasks();
+</script>
+</body>
+</html>
