@@ -397,6 +397,9 @@ let WEBHOOKS = {
   delete: ''
 };
 
+WEBHOOKS.get    = "https://hook.eu2.make.com/cvdw65zl8uquzrdk14qtfmg0jhcwt3t1";
+WEBHOOKS.add    = "https://hook.eu2.make.com/xnrstfc0678o9b8khz7juasqqfdohuap";
+
 function loadConfig() {
   const saved = localStorage.getItem('ts_webhooks');
   if (saved) { WEBHOOKS = JSON.parse(saved); checkConfigBanner(); }
