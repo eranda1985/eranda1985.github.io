@@ -534,7 +534,7 @@ function renderTable() {
     const date  = t.updated_at ? formatDate(t.updated_at) : (t.created_at ? formatDate(t.created_at) : '—');
     return `
     <tr>
-      <td class="col-id">#${String(t.id||'').slice(-4).padStart(4,'0')}</td>
+      <!--<td class="col-id">#${String(t.id||'').slice(-4).padStart(4,'0')}</td>-->
       <td class="col-name">${esc(t.name||'')}</td>
       <td class="col-task">${esc(t.task||'')}</td>
       <td class="col-status">${badge}</td>
