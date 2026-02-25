@@ -442,7 +442,8 @@ async function loadTasks() {
   showLoading();
   try {
     const res = await fetch(WEBHOOKS.get);
-    const data = await res.json();
+    let data = await res.json();
+    data = data['json'];
     tasks = Array.isArray(data) ? data : (data.tasks || data.rows || []);
     renderTable();
     updateStats();
